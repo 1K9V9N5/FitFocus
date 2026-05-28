@@ -180,11 +180,6 @@ with col_add2:
 
 st.divider()
 
-import requests
-import urllib.parse
-
-st.divider()
-
 # ==========================================
 # 5. DER EINFACHE E-MAIL WECKER (Portfolio-Mockup)
 # ==========================================
@@ -193,8 +188,18 @@ st.markdown("<h2>⏰ Täglicher E-Mail-Wecker</h2>", unsafe_allow_html=True)
 with st.container(border=True):
     st.markdown("### 📧 Benachrichtigung einrichten")
     
+    # Fehlervermeidung: Wir stellen SICHER, dass die Tabelle existiert, bevor wir lesen!
     connection = sqlite3.connect("fitfocus.db")
     db_worker = connection.cursor()
+    db_worker.execute("CREATE TABLE IF NOT EXISTS settings (id INTEGER PRIMARY KEY, email TEXT)")
+    
+    # Prüfen, ob ein Eintrag da ist. Wenn nicht, legen wir einen leeren an.
+    db_worker.execute("SELECT COUNT(*) FROM settings")
+    if db_worker.fetchone()[0] == 0:
+        db_worker.execute("INSERT INTO settings (email) VALUES ('')")
+        connection.commit()
+    
+    # Jetzt können wir absolut sicher auslesen (READ)
     gespeicherte_mail_row = db_worker.execute("SELECT email FROM settings WHERE id = 1").fetchone()
     connection.close()
     
@@ -214,9 +219,7 @@ with st.container(border=True):
     if st.button("🔔 Test-Erinnerung jetzt an mein Handy senden", use_container_width=True):
         if user_email:
             with st.spinner("Verbindung zum SMTP-Gateway wird aufgebaut..."):
-                # Simulation für das öffentliche Portfolio (Best Practice ohne Hardcoding)
                 st.success(f"📬 Simulations-Modus aktiv: Nachricht erfolgreich an {user_email} vermittelt!")
                 st.balloons()
         else:
             st.warning("Bitte trage zuerst deine E-Mail-Adresse ein.")
-
